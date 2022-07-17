@@ -1,49 +1,22 @@
-using Microsoft.Azure.Functions.Worker;
-using Microsoft.Azure.Functions.Worker.Extensions;
-using Microsoft.Azure.Functions.Worker.Http;
-
-using Azure.Identity;
-using Azure.Storage.Blobs;
-using Microsoft.Extensions.Logging;
-using PnP.Core.Admin.Model.SharePoint;
-using PnP.Core.Model.SharePoint;
-using PnP.Core.Services;
 using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Collections.Specialized;
 using System.IO;
-using System.Net;
-using System.Text;
-using System.Text.Json;
-using System.Threading.Tasks;
-using System.Web;
 using CsvHelper;
-using CsvHelper.Configuration;
+using Microsoft.Azure.Functions.Worker;
+using Microsoft.Extensions.Logging;
 
 namespace Mcd79.M365DataRepo.Functions
 {
-    public class ListLibrariesBySite
+    public class ListLibsBySite
     {
-        private readonly ILogger logger;
-        private readonly IPnPContextFactory contextFactory;
-        private readonly AzureFunctionSettings azureFunctionSettings;
+        private readonly ILogger _logger;
 
-        public ListLibrariesBySite(IPnPContextFactory pnpContextFactory, ILoggerFactory loggerFactory, AzureFunctionSettings settings)
+        public ListLibsBySite(ILoggerFactory loggerFactory)
         {
-            logger = loggerFactory.CreateLogger<ListSites>();
-            contextFactory = pnpContextFactory;
-            azureFunctionSettings = settings;
+            _logger = loggerFactory.CreateLogger<ListLibsBySite>();
         }
 
-        /// <summary>
-        /// Demo function that creates a site collection, uploads an image to site assets and creates a page with an image web part
-        /// GET/POST url: http://localhost:7071/api/ListSites
-        /// </summary>
-        /// <param name="req"></param>
-        /// <returns></returns>
-        [Function("ListLibrariesBySite")]
-        public async Task<HttpResponseData> Run([BlobTrigger("sites/{name}")] Stream siteBlob, HttpRequestData req)
+        [Function("ListLibsBySite")]
+        public void Run([BlobTrigger("samples-workitems/{name}", Connection = "m365datarepo_STORAGE")] string myBlob, string name)
         {
             logger.LogInformation($"ListLIbrariesBySite function starting for {siteBlob}...");
 

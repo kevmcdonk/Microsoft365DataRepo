@@ -17,6 +17,7 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using System.Web;
 using CsvHelper;
+using CsvHelper.Configuration;
 
 namespace Mcd79.M365DataRepo.Functions
 {
@@ -100,7 +101,7 @@ namespace Mcd79.M365DataRepo.Functions
                                 {
                                     csvWriter.WriteRecords(siteCollections);
                                 } // StreamWriter gets flushed here.
-                                string csvText = System.Text.LocalEncoding.GetString(memoryStream.ToArray());
+                                string csvText = System.Text.Encoding.GetString(memoryStream.ToArray());
                                 await response.WriteStringAsync(csvText);
 
                                 return memoryStream.ToArray();
