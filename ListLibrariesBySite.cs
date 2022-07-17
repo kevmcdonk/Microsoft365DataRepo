@@ -1,5 +1,7 @@
 using Microsoft.Azure.Functions.Worker;
+using Microsoft.Azure.Functions.Worker.Extensions;
 using Microsoft.Azure.Functions.Worker.Http;
+
 using Azure.Identity;
 using Azure.Storage.Blobs;
 using Microsoft.Extensions.Logging;
@@ -17,16 +19,17 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using System.Web;
 using CsvHelper;
+using CsvHelper.Configuration;
 
 namespace Mcd79.M365DataRepo.Functions
 {
-    public class ListSites
+    public class ListLibrariesBySite
     {
         private readonly ILogger logger;
         private readonly IPnPContextFactory contextFactory;
         private readonly AzureFunctionSettings azureFunctionSettings;
 
-        public ListSites(IPnPContextFactory pnpContextFactory, ILoggerFactory loggerFactory, AzureFunctionSettings settings)
+        public ListLibrariesBySite(IPnPContextFactory pnpContextFactory, ILoggerFactory loggerFactory, AzureFunctionSettings settings)
         {
             logger = loggerFactory.CreateLogger<ListSites>();
             contextFactory = pnpContextFactory;
@@ -39,10 +42,10 @@ namespace Mcd79.M365DataRepo.Functions
         /// </summary>
         /// <param name="req"></param>
         /// <returns></returns>
-        [Function("ListSites")]
-        public async Task<HttpResponseData> Run([HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequestData req)
+        [Function("ListLibrariesBySite")]
+        public async Task<HttpResponseData> Run([BlobTrigger("sites/{name}")] Stream siteBlob, HttpRequestData req)
         {
-            logger.LogInformation("ListSites function starting...");
+            logger.LogInformation($"ListLIbrariesBySite function starting for {siteBlob}...");
 
             HttpResponseData response = null;
 
@@ -64,9 +67,10 @@ namespace Mcd79.M365DataRepo.Functions
                     string containerEndpoint = string.Format("https://{0}.blob.core.windows.net/{1}",
                                                 accountName,
                                                 containerName);
-/*
-                    foreach(var siteCollection in siteCollections) {
-                        // Get a credential and create a service client object for the blob container.
+
+                    foreach(var list in pnpContext.Web.Lists.AsRequested())
+                    {
+                                                // Get a credential and create a service client object for the blob container.
                         BlobContainerClient containerClient = new BlobContainerClient(new Uri(containerEndpoint),
                                                                     new DefaultAzureCredential());
 
@@ -74,10 +78,10 @@ namespace Mcd79.M365DataRepo.Functions
                         {
                             // Create the container if it does not exist.
                             await containerClient.CreateIfNotExistsAsync();
-                            string blobName = $"sites/{siteCollection.Id.ToString()}.csv";
+                            string blobName = $"lists/{list.Id.ToString()}.json";
 
                             // Upload text to a new block blob.
-                            string blobContents = JsonSerializer.Serialize(siteCollection);
+                            string blobContents = JsonSerializer.Serialize(list);
                             byte[] byteArray = Encoding.ASCII.GetBytes(blobContents);
 
                             using (MemoryStream stream = new MemoryStream(byteArray))
@@ -91,25 +95,12 @@ namespace Mcd79.M365DataRepo.Functions
                             Console.ReadLine();
                             throw;
                         }
-                    }
-*/
-                    using (var memoryStream = new MemoryStream())
-                            {
-                                using (var streamWriter = new StreamWriter(memoryStream))
-                                using (var csvWriter = new CsvWriter(streamWriter))
-                                {
-                                    csvWriter.WriteRecords(siteCollections);
-                                } // StreamWriter gets flushed here.
-                                string csvText = System.Text.LocalEncoding.GetString(memoryStream.ToArray());
-                                await response.WriteStringAsync(csvText);
 
-                                return memoryStream.ToArray();
-                            }
-                    //logger.LogInformation($"Sites created: {siteCollections.Count} found");
+                    }
 
 
                     // Return the URL of the created site
-                    
+                    await response.WriteStringAsync("Lists captured");
 
                     return response;
                 }
